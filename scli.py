@@ -59,7 +59,10 @@ def add_command():
             description.append(arg)
 
     description = ' '.join(description)
-    print('Adding task: "{}"'.format(description))
+    print()
+    message_first = 'Adding task: "{}"'.format(description)
+    print('-' * len(message_first))
+    print(message_first)
     print('Project: "{}"'.format(project))
     print('tags: {}'.format(tags))
     print('score: {}'.format(score))
@@ -215,12 +218,15 @@ def next_command():
 
     # print table
     for row in range(len(next_tasks)):
-        if table['id'][row] == str(picked_taskid):
-            print()
-            print(('{:>%d}' % maxlens[0]).format('..now'))
-            print_line()
         values = (table[field][row] for field in fields_to_display)
-        print(fmt_str.format(*tuple(values)))
+        if table['id'][row] == str(picked_taskid):
+            # print picked task
+            print()
+            print(('{:>%d}' % maxlens[0]).format('#picked'))
+            print(fmt_str.format(*tuple(values)))
+            print()
+        else:
+            print(fmt_str.format(*tuple(values)))
 
     print()
     print('Your score: {}'.format(api.rewards()))
@@ -259,6 +265,7 @@ def pick_command():
         print('.. 1 argument: task id please !')
     except ValueError:
         print('.. no such task id, try again')
+    # TODO describe the picked task a little more than default message
 
 
 def drop_command():
@@ -267,61 +274,119 @@ def drop_command():
 
 def done_command():
     task_document = api.get(api.pickedid())
-    print('-{} @:{}'.format(
+    print('-\n{} @:{}\n- done.'.format(
         task_document['description'], task_document['project'])
     )
     print('You\'re done with task {}'.format(api.pickedid()))
     api.done()
 
+
 # parses the command line
-commands = {
-    'next': {
-        'shortcuts': ('', ),
-        'action': next_command,
-        'help': 'prints your tasks and stats (default command)'
-    },
-    'reset': {
-        'action': reset_command,
-        'help': '''do not use or you're sure you're sure
-you want to delete everything permanantly'''
-    }
+class Commands():
 
-}
+    def help(self):
+        print('commands:')
+        print()
+        maxcmdlen = max(len(cmd) for cmd in self.commands)
+        prefmt = '    {cmd:%d}  {helpmsg}{aliases}' % maxcmdlen
+        for command in self.commands:
+            cmdinfo = self.commands[command]
+            shortcuts_str = ''
+            if 'shortcuts' in cmdinfo:
+                shortcuts_str = ', '.join(cmdinfo['shortcuts'])
+            if len(shortcuts_str) > 0:
+                shortcuts_str = '\n   (aliases: {})'.format(shortcuts_str)
+            print(prefmt.format(
+                cmd=command,
+                aliases=shortcuts_str,
+                helpmsg=cmdinfo['help']
+            ))
+        print()
 
-if command in ('next', ''):
-    next_command()
+    def show_examples(self):
+        print('examples:')
+        print()
+        print('\n'.join(self.examples))
+        print()
+        print("If you are using commands in a shell", end=' ')
+        print("you may need to escape some characters.")
 
-elif command in ('reset',):
-    reset_command()
+    def __init__(self):
+        self.commands = {
+            'help':  {
+                'action': self.help,
+                'help': 'Print this message'
+            },
+            'showme': {
+                'action': self.show_examples,
+                'help': 'Show some examples'
+            }
+        }
+        self.examples = []
 
-elif command in ('add', 'new'):
-    add_command()
+    def register(self, name, action,
+                 shortcuts=[], helpmsg='', examples=[], groups=False):
+        command = {}
+        if len(shortcuts) > 0:
+            command['shortcuts'] = tuple(s for s in shortcuts)
+        self.examples += examples
+        command['action'] = action
+        command['help'] = helpmsg
+        command['groups'] = groups
+        self.commands[name] = command
 
-elif command in ('pick'):
-    pick_command()
+    def parse(self, query):
+        matched = False
+        for cmd in self.commands:
+            cmdinfo = self.commands[cmd]
+            if query == cmd:
+                matched = True
+                break
+            elif 'shortcuts' in cmdinfo:
+                if query in cmdinfo['shortcuts']:
+                    matched = True
+                    break
+        if matched:
+            cmdinfo['action']()
+        else:
+            print('unknown command, try again or try help command')
 
-elif command in ('drop'):
-    drop_command()
 
-elif command in ('ok', 'done'):
-    done_command()
+cli = Commands()
+cli.register('next', next_command, shortcuts=[''],
+             helpmsg='Print your tasks and stats', groups=False)
+cli.register('done', done_command, shortcuts=['finish', '-', 'ok'],
+             helpmsg='This is for when you\'re done with the picked task')
+cli.register('reset', reset_command, shortcuts=[],
+             helpmsg='You want to delete everything permanantly')
+cli.register('pick', pick_command, shortcuts=['now', ':'],
+             helpmsg='Pick the task giving an id')
+cli.register('drop', drop_command,
+             helpmsg='Drop the picked task if there is one')
 
-elif command in ('help', '-h', '--help'):
-    print('''commands:
-          - help: prints this message
-          - next: prints your tasks and stats (default command)
-          - reset: do not use or you're sure you want to delete everything
-                   permanantly
-          - add: new: adds a new task, it parses all arguments the following
-            > add @:projectname \\#tag :4pts description anywhere \\
-              \\#lastcount @:thisproject
-            | adds task 'description anywhere' 4pts,
-            | project 'this project',
-            | tags: #tag, #lastcount
-            (but careful with escape characters into your shell)
-          - pick <id>: picks that task
-          - drop: drops picked task
-          - ok: done: picked task is finished''')
+add_examples = '''\
+> add my task @:projectname description #tag could be anywhere
+> add another task #moretag #tagged :4pts\
+'''
+add_examples.split('\n')
 
-else:
-    print('unknown command, please try again or ask help command')
+cli.register('add', add_command, shortcuts=['new'],
+             help='Add new task parsing all arguments (see examples)',
+             examples=[add_examples])
+
+cli.parse(command)
+#    print('''commands:
+#     TEST - help: prints this message
+#     TEST - next: prints your tasks and stats (default command)
+#          - reset: do not use or you're sure you want to delete everything
+#                   permanantly
+#          - add: new: adds a new task, it parses all arguments the following
+#            > add @:projectname \\#tag :4pts description anywhere \\
+#              \\#lastcount @:thisproject
+#            | adds task 'description anywhere' 4pts,
+#            | project 'this project',
+#            | tags: #tag, #lastcount
+#            (but careful with escape characters into your shell)
+#          - pick <id>: picks that task
+#          - drop: drops picked task
+#          - ok: done: picked task is finished''')
