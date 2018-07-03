@@ -1,0 +1,2 @@
+tinydb==3.9.0.post1
+tinydb-serialization==1.0.4
