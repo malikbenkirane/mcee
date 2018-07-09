@@ -176,7 +176,7 @@ def sumup_command():
 def unpick_command():
     pid = api.pickedid()
     if pid:
-        print('Resetting task {} last pick'.format(pid))
+        print('Resetting task {} to before last pick'.format(pid))
         api.drop()
         task = api.get(pid)
         task['history'] = task['history'][-1]
