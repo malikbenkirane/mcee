@@ -126,6 +126,7 @@ def add_command():
 
     print()
     print('Your task has been added')
+    # FIXME should not pass when the description is empty
     print('New task id:  {}'.format(taskid))
 
 
