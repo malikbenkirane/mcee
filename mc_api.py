@@ -17,9 +17,7 @@ class DateTimeSerializer(Serializer):
 
 serialization = SerializationMiddleware()
 serialization.register_serializer(DateTimeSerializer(), 'TinyDate')
-# db = TinyDB('db.json', storage=serialization)  # this for test cases setup
-db = TinyDB('/home/void/src/mcee/db.json', storage=serialization)
-
+db = TinyDB('/home/void/recess/devel/mcee/db.json', storage=serialization)  # this for test cases setup
 
 # LOW LEVEL API
 def record_action(action):
