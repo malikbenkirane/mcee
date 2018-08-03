@@ -174,6 +174,18 @@ def sumup_command():
 
 
 # @record_action
+def unpick_command():
+    pid = api.pickedid()
+    if pid:
+        print('Resetting task {} to before last pick'.format(pid))
+        api.drop()
+        task = api.get(pid)
+        task['history'] = task['history'][-1]
+    else:
+        print('No picked task')
+
+
+# @record_action
 def dropped_command():
     print_table(api.dropped)
 
@@ -577,6 +589,9 @@ cli.register('score', score_command,
              helpmsg='Set reward score for the picked task')
 cli.register('sumup', sumup_command, shortcuts=[''],
              helpmsg='Less than next')
+cli.register('unpick', unpick_command, shortcuts=['fix-pick'],
+             helpmsg='Fix picked task left as picked. \
+             The task is reset like if it was not not picked.')
 
 # TODO tag command
 # TODO bang operator .. continue
