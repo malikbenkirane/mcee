@@ -16,6 +16,7 @@ def format_time_analytics(first, totaltime_picked, lastpick_time):
         return ft_current
 
 
+# TODO deltas should say 1h+ or 2h- but not ~1d
 def pretty_time_delta(seconds):
 
     seconds = int(seconds)
