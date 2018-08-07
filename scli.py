@@ -1,4 +1,5 @@
 import sys
+import re
 from mc_api import TaskAPI, db, time_analytics
 from datetime import datetime, timedelta
 import copy
@@ -49,7 +50,7 @@ def pretty_time_delta(seconds):
 
 
 try:
-    args = sys.argv[:]
+    args = re.split(r'\s+', ' '.join(sys.argv[:]))[1:]
     command = args[1]
 except IndexError:
     command = ''
@@ -403,7 +404,7 @@ def pick_command():
     except IndexError:
         picked_task_id = api.pickedid()
         if picked_task_id is None:
-            print('.. 1 arg at least > or 1 task picked, try again')
+            print('no task ... or give args and try again')
         else:
             task_document = api.get(picked_task_id)
             print('> "{description}"{project}{tags}'.format(
@@ -552,7 +553,7 @@ class Commands():
             print('unknown command, try again or try help command')
 
 
-# new cli instance
+# cli (Commands instance)
 
 cli = Commands()
 
@@ -610,11 +611,4 @@ cli.register('add', add_command, shortcuts=['new'],
 
 # invoke parse command
 
-# FIXME depends on parameters read from sys.argv
-# for instance if the programm is called the following way
-# ```
-# python scli.py 'add task'
-# ```
-# parse will fail to recognize the command
-# for the example above the command is 'add task'
 cli.parse(command)
