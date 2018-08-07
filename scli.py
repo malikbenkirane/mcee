@@ -53,7 +53,6 @@ def pretty_time_delta(seconds):
 try:
     args = re.split(r'\s+', ' '.join(sys.argv[:]))[1:]
     command = args[0]
-    print(args, command)
 except IndexError:
     command = ''
 
