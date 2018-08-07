@@ -52,7 +52,8 @@ def pretty_time_delta(seconds):
 
 try:
     args = re.split(r'\s+', ' '.join(sys.argv[:]))[1:]
-    command = args[1]
+    command = args[0]
+    print(args, command)
 except IndexError:
     command = ''
 
@@ -610,6 +611,5 @@ cli.register('add', add_command, shortcuts=['new'],
              helpmsg='Add new task parsing all arguments (see examples)',
              examples=[add_examples])
 
-# invoke parse command
-
+# invoke command parser on command
 cli.parse(command)
