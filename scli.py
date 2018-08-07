@@ -610,4 +610,11 @@ cli.register('add', add_command, shortcuts=['new'],
 
 # invoke parse command
 
+# FIXME depends on parameters read from sys.argv
+# for instance if the programm is called the following way
+# ```
+# python scli.py 'add task'
+# ```
+# parse will fail to recognize the command
+# for the example above the command is 'add task'
 cli.parse(command)
