@@ -423,7 +423,7 @@ def print_table(api_func, noprint=[]):
                 tags.insert(0, '')
         else:
             tags = task['tags']
-        row['tags'] = ' '.join(['#{}'.format(tag) for tag in tags])
+        row['tags'] = ', '.join(['{}'.format(tag) for tag in tags])
         project = str(task['project'])
 
         # task project
