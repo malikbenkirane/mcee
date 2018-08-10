@@ -49,7 +49,6 @@ def pretty_time_delta(seconds):
     else:
         return '<1m'
 
-
 try:
     args = re.split(r'\s+', ' '.join(sys.argv[:]))
     command = args[1]
@@ -135,7 +134,12 @@ def add_command():
 # @record_action
 def archive_command():
 
+    pid = apid.pickedid()
+    if pid == None:
+        print("No current task, nothing to archive.")
+        quit()
     api.archive()
+    print("Task %d is archived." % pid)
 
 
 # @record_action
@@ -195,6 +199,163 @@ def dropped_command():
 # @record_action
 def previously_command():
     print_table(api.previously)
+
+
+# @record_action
+def pick_command():
+    try:
+        taskid = int(args[2])
+        api.pick(taskid)
+    except IndexError:
+        picked_task_id = api.pickedid()
+        if picked_task_id is None:
+            print('no task ... or give args and try again')
+        else:
+            task_document = api.get(picked_task_id)
+            print('> "{description}"{project}{tags}'.format(
+                description=task_document['description'],
+                project='' if task_document['project'] is None
+                else ' @:' + task_document['project'],
+                tags='' if len(task_document['tags']) == 0
+                else ' #' + ' #'.join(task_document['tags'])
+            ))
+            # print('is the task you picked,')
+            if 'history' in task_document:
+                print(format_time_analytics(
+                    *time_analytics(task_document['history'])
+                ))
+    except ValueError:
+        print('.. no such task id, try again')
+    # TODO describe the picked task a little more than default message
+
+
+def freshstart_command():
+    lastscore = api.rewards()
+    if lastscore > 0:
+        api.freshstart()
+        print('Last score : %d' % lastscore)
+        print('New score : 0')
+        print('It\'s a fresh start')
+    else:
+        print('Do at least one task to ask freshstart')
+
+
+# @record_action
+def project_command():
+
+    projectname = None
+    if len(args) > 2:
+        projectname = ' '.join(args[2:])
+        print('Setting project.')
+    curproject = api.project(projectname)
+    print('Current project : %s' % curproject)
+
+
+# @record_action
+def drop_command():
+    print('You dropping task {}'.format(api.pickedid()))
+    print(format_time_analytics(*api.drop()))
+
+
+# @record_action
+def done_command():
+    try:
+        task_document = api.get(api.pickedid())
+        message = '{} @:{}'.format(
+            task_document['description'], task_document['project']
+        )
+        print('-'*len(message))
+        print(message)
+        print('-'*len(message)+' done.')
+        # print('You\'re done with task {}'.format(api.pickedid()))
+        print(format_time_analytics(*api.done()))
+        score = task_document['score']
+        print('You earned %d point%s' % (score, 's' if score > 1 else ''))
+    except ValueError:
+        print('No task has been picked')
+
+
+# to parse command lines
+class Commands():
+
+    def help(self):
+        print('commands:')
+        print()
+        maxcmdlen = max(len(cmd) for cmd in self.commands)
+        # TODO aliases in stack before command name
+        # maxshtlrn = max(len(sht) for shortcuts in map( in self.commands
+        # for sht in self.commands[cmd]['shortcuts']
+        # if 'shortcuts' in self.commands[cmd])
+        prefmt = '    {cmd:%d}  {helpmsg}{aliases}' % maxcmdlen
+        for command in self.commands:
+            cmdinfo = self.commands[command]
+            shortcuts_str = ''
+            if 'shortcuts' in cmdinfo:
+                shortcuts_str = ', '.join(cmdinfo['shortcuts'])
+            if len(shortcuts_str) > 0:
+                shortcuts_str = (
+                    '\n    {:%d}  (aliases: {})' % maxcmdlen
+                ).format('', shortcuts_str)
+            print(prefmt.format(
+                cmd=command,
+                aliases=shortcuts_str,
+                helpmsg=cmdinfo['help']
+            ), end='\n'*2)
+        print()
+
+    def show_examples(self):
+        print('examples:')
+        print()
+        print('\n'.join(self.examples))
+        print()
+        print("If you are using commands in a shell", end=' ')
+        print("you may need to escape some characters.")
+
+    def __init__(self):
+        self.commands = {
+            'help':  {
+                'action': self.help,
+                'help': 'Print this message'
+            },
+            'showme': {
+                'action': self.show_examples,
+                'help': 'Show some examples'
+            }
+        }
+        self.examples = []
+
+    def register(self, name, action,
+                 shortcuts=[], helpmsg='', examples=[],
+                 group_shortener=None, groups=0):
+        command = {}
+        if len(shortcuts) > 0:
+            command['shortcuts'] = tuple(s for s in shortcuts)
+        self.examples += examples
+        command['action'] = action
+        command['help'] = helpmsg
+        command['groups'] = groups
+        if group_shortener is not None:
+            command['group_shortener'] = group_shortener
+        self.commands[name] = command
+
+    def parse(self, query):
+        matched = False
+        for cmd in self.commands:
+            cmdinfo = self.commands[cmd]
+            if query == cmd:
+                matched = True
+                break
+            elif 'shortcuts' in cmdinfo:
+                if query in cmdinfo['shortcuts']:
+                    matched = True
+                    break
+        if matched:
+            cmdinfo['action']()
+        else:
+            # if query.isdigit():
+                # if all(arg.isdigit() for arg in args[1:-1]):
+                    # if
+            print('unknown command, try again or try help command')
 
 
 def print_table(api_func, noprint=[]):
@@ -395,163 +556,6 @@ def print_table(api_func, noprint=[]):
     print()
 
     return fields
-
-
-# @record_action
-def pick_command():
-    try:
-        taskid = int(args[2])
-        api.pick(taskid)
-    except IndexError:
-        picked_task_id = api.pickedid()
-        if picked_task_id is None:
-            print('no task ... or give args and try again')
-        else:
-            task_document = api.get(picked_task_id)
-            print('> "{description}"{project}{tags}'.format(
-                description=task_document['description'],
-                project='' if task_document['project'] is None
-                else ' @:' + task_document['project'],
-                tags='' if len(task_document['tags']) == 0
-                else ' #' + ' #'.join(task_document['tags'])
-            ))
-            # print('is the task you picked,')
-            if 'history' in task_document:
-                print(format_time_analytics(
-                    *time_analytics(task_document['history'])
-                ))
-    except ValueError:
-        print('.. no such task id, try again')
-    # TODO describe the picked task a little more than default message
-
-
-def freshstart_command():
-    lastscore = api.rewards()
-    if lastscore > 0:
-        api.freshstart()
-        print('Last score : %d' % lastscore)
-        print('New score : 0')
-        print('It\'s a fresh start')
-    else:
-        print('Do at least one task to ask freshstart')
-
-
-# @record_action
-def project_command():
-
-    projectname = None
-    if len(args) > 2:
-        projectname = ' '.join(args[2:])
-        print('Setting project.')
-    curproject = api.project(projectname)
-    print('Current project : %s' % curproject)
-
-
-# @record_action
-def drop_command():
-    print('You dropping task {}'.format(api.pickedid()))
-    print(format_time_analytics(*api.drop()))
-
-
-# @record_action
-def done_command():
-    try:
-        task_document = api.get(api.pickedid())
-        message = '{} @:{}'.format(
-            task_document['description'], task_document['project']
-        )
-        print('-'*len(message))
-        print(message)
-        print('-'*len(message)+' done.')
-        # print('You\'re done with task {}'.format(api.pickedid()))
-        print(format_time_analytics(*api.done()))
-        score = task_document['score']
-        print('You earned %d point%s' % (score, 's' if score > 1 else ''))
-    except ValueError:
-        print('No task has been picked')
-
-
-# parses the command line
-class Commands():
-
-    def help(self):
-        print('commands:')
-        print()
-        maxcmdlen = max(len(cmd) for cmd in self.commands)
-        # TODO aliases in stack before command name
-        # maxshtlrn = max(len(sht) for shortcuts in map( in self.commands
-        # for sht in self.commands[cmd]['shortcuts']
-        # if 'shortcuts' in self.commands[cmd])
-        prefmt = '    {cmd:%d}  {helpmsg}{aliases}' % maxcmdlen
-        for command in self.commands:
-            cmdinfo = self.commands[command]
-            shortcuts_str = ''
-            if 'shortcuts' in cmdinfo:
-                shortcuts_str = ', '.join(cmdinfo['shortcuts'])
-            if len(shortcuts_str) > 0:
-                shortcuts_str = (
-                    '\n    {:%d}  (aliases: {})' % maxcmdlen
-                ).format('', shortcuts_str)
-            print(prefmt.format(
-                cmd=command,
-                aliases=shortcuts_str,
-                helpmsg=cmdinfo['help']
-            ), end='\n'*2)
-        print()
-
-    def show_examples(self):
-        print('examples:')
-        print()
-        print('\n'.join(self.examples))
-        print()
-        print("If you are using commands in a shell", end=' ')
-        print("you may need to escape some characters.")
-
-    def __init__(self):
-        self.commands = {
-            'help':  {
-                'action': self.help,
-                'help': 'Print this message'
-            },
-            'showme': {
-                'action': self.show_examples,
-                'help': 'Show some examples'
-            }
-        }
-        self.examples = []
-
-    def register(self, name, action,
-                 shortcuts=[], helpmsg='', examples=[],
-                 group_shortener=None, groups=0):
-        command = {}
-        if len(shortcuts) > 0:
-            command['shortcuts'] = tuple(s for s in shortcuts)
-        self.examples += examples
-        command['action'] = action
-        command['help'] = helpmsg
-        command['groups'] = groups
-        if group_shortener is not None:
-            command['group_shortener'] = group_shortener
-        self.commands[name] = command
-
-    def parse(self, query):
-        matched = False
-        for cmd in self.commands:
-            cmdinfo = self.commands[cmd]
-            if query == cmd:
-                matched = True
-                break
-            elif 'shortcuts' in cmdinfo:
-                if query in cmdinfo['shortcuts']:
-                    matched = True
-                    break
-        if matched:
-            cmdinfo['action']()
-        else:
-            # if query.isdigit():
-                # if all(arg.isdigit() for arg in args[1:-1]):
-                    # if
-            print('unknown command, try again or try help command')
 
 
 # cli (Commands instance)
