@@ -91,7 +91,7 @@ def add_command():
 
     tags = []
     project = current_project
-    score = 5
+    score = 1
     description = []
 
     for arg in args[2:]:
