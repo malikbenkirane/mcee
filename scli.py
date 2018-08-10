@@ -85,16 +85,17 @@ def record_action(action):
 
 
 # defines the commands
+
 # @record_action
 def add_command():
 
     tags = []
     project = current_project
-    score = 1
+    score = 5
     description = []
 
     for arg in args[2:]:
-        if arg[0] == '#':
+        if arg[0] == '#' or arg[0] == '-':
             tags.append(arg[1:])
         elif arg[:4] == 'pro:':
             project = arg[4:]
@@ -606,7 +607,8 @@ cli.register('unpick', unpick_command, shortcuts=['fix-pick'],
 
 add_examples = '''\
 > add my task @:projectname description #tag could be anywhere
-> add another task #moretag #tagged :4pts\
+> add another task #moretag #tagged :4pts
+> add other task and another way to -tag -forfun\
 '''
 add_examples.split('\n')
 
