@@ -596,8 +596,8 @@ cli.register('score', score_command,
 cli.register('sumup', sumup_command, shortcuts=[''],
              helpmsg='Less than next')
 cli.register('unpick', unpick_command, shortcuts=['fix-pick'],
-             helpmsg='Fix picked task left as picked. \
-             The task is reset like if it was not not picked.')
+             helpmsg='Fix picked task left as picked. \n\
+                The task is reset like if it was not not picked.')
 
 # TODO tag command
 # TODO bang operator .. continue
