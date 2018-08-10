@@ -49,19 +49,29 @@ def pretty_time_delta(seconds):
     else:
         return '<1m'
 
+# parse command line
 try:
     args = re.split(r'\s+', ' '.join(sys.argv[:]))
     command = args[1]
 except IndexError:
     command = ''
 
+# prepare db and api
 status = db.table('status')
 tasks = db.table('tasks')
 api = TaskAPI(status, tasks)
 
-if 'project' not in api.status_document:
-    api.reset(db)
-current_project = api.status_document['project']
+# configure currrent project
+
+# Dangerous statements disabled
+# if 'project' not in api.status_document:
+#     api.reset(db)
+
+try:
+    current_project = api.status_document['project']
+except KeyError:
+    print('No project, you may want to api.reset(db)')
+    quit()
 
 
 def record_action(action):
@@ -276,7 +286,7 @@ def done_command():
         print('No task has been picked')
 
 
-# to parse command lines
+# Commands class : to parse command lines
 class Commands():
 
     def help(self):
@@ -494,7 +504,6 @@ def print_table(api_func, noprint=[]):
             if width > maxlens[field]:
                 maxlens[field] = width
 
-
         # filling the table with the values
 
         for field in fields:
@@ -528,6 +537,8 @@ def print_table(api_func, noprint=[]):
     )
 
     fmt_str = '  '.join(['{:>%d}'] * len(fields_to_display)) % maxlens
+
+    # print user table
 
     # print emptyline
     print()
