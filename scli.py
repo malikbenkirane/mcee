@@ -145,7 +145,7 @@ def add_command():
 # @record_action
 def archive_command():
 
-    pid = apid.pickedid()
+    pid = api.pickedid()
     if pid == None:
         print("No current task, nothing to archive.")
         quit()
