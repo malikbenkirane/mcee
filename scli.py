@@ -199,7 +199,7 @@ def sumup_command():
     print_table(api.next, noprint=['totalpicks', 'ratio'])
 
 
-# FIXME unpick_command
+# unpick_command
 # @record_action
 def unpick_command():
     pid = api.pickedid()
@@ -207,7 +207,8 @@ def unpick_command():
         print('Resetting task {} to before last pick'.format(pid))
         api.drop()
         task = api.get(pid)
-        task['history'] = task['history'][-1]
+        task['history'] = task['history'][:-2]
+        api.tasks.update(task, doc_ids=[task.doc_id])
     else:
         print('No picked task')
 
