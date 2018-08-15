@@ -1,3 +1,6 @@
+# scli.py - mcee simple cli
+
+# requirements
 import sys
 import re
 from mc_api import TaskAPI, db, time_analytics
@@ -5,6 +8,7 @@ from datetime import datetime, timedelta
 import copy
 
 
+# pretty time analytics
 def format_time_analytics(first, totaltime_picked, lastpick_time):
     ft_current = 'Current Session has last {}'\
         .format(pretty_time_delta(lastpick_time.total_seconds()))
@@ -16,6 +20,7 @@ def format_time_analytics(first, totaltime_picked, lastpick_time):
         return ft_current
 
 
+# pretty timedelta to str
 # TODO deltas should say 1h+ or 2h- but not ~1d
 def pretty_time_delta(seconds):
 
@@ -93,9 +98,9 @@ def record_action(action):
 
     return wrapper
 
+### commands
 
-# defines the commands
-
+# add command
 # @record_action
 def add_command():
 
@@ -142,6 +147,7 @@ def add_command():
     print('New task id:  {}'.format(taskid))
 
 
+# archive command
 # @record_action
 def archive_command():
 
@@ -153,6 +159,7 @@ def archive_command():
     print("Task %d is archived." % pid)
 
 
+# reset command
 # @record_action
 def reset_command():
 
@@ -161,6 +168,7 @@ def reset_command():
     print("done")
 
 
+# score command
 # @record_action
 def score_command():
 
@@ -172,24 +180,26 @@ def score_command():
         ))
 
 
-# table commands
-
+# archive command
 # @record_action
 def archives_command():
     print_table(api.archives)
 
 
+# next command
 # no record: most used command (loss in disk space)
 # @record_action
 def next_command():
     print_table(api.next, noprint=['done'])
 
 
+# sumup command
 # @record_action
 def sumup_command():
     print_table(api.next, noprint=['totalpicks', 'ratio'])
 
 
+# FIXME unpick_command
 # @record_action
 def unpick_command():
     pid = api.pickedid()
@@ -202,16 +212,19 @@ def unpick_command():
         print('No picked task')
 
 
+# dropped command
 # @record_action
 def dropped_command():
     print_table(api.dropped)
 
 
+# previously command
 # @record_action
 def previously_command():
     print_table(api.previously)
 
 
+# pick command
 # @record_action
 def pick_command():
     try:
@@ -240,6 +253,7 @@ def pick_command():
     # TODO describe the picked task a little more than default message
 
 
+# freshstart command
 def freshstart_command():
     lastscore = api.rewards()
     if lastscore > 0:
@@ -251,6 +265,7 @@ def freshstart_command():
         print('Do at least one task to ask freshstart')
 
 
+# project_command
 # @record_action
 def project_command():
 
@@ -262,12 +277,14 @@ def project_command():
     print('Current project : %s' % curproject)
 
 
+# drop command
 # @record_action
 def drop_command():
     print('You dropping task {}'.format(api.pickedid()))
     print(format_time_analytics(*api.drop()))
 
 
+# done command
 # @record_action
 def done_command():
     try:
@@ -286,7 +303,7 @@ def done_command():
         print('No task has been picked')
 
 
-# Commands class : to parse command lines
+# Commands (aka command parser)
 class Commands():
 
     def help(self):
