@@ -128,7 +128,7 @@ def add_command():
 
     description = ' '.join(description)
     message_first = 'Adding task: "{}"'.format(description)
-    print('+' * len(message_first))
+    # print('+' * len(message_first))
     print(message_first)
     print('Project: "{}"'.format(project))
     print('tags: {}'.format(tags))
@@ -293,9 +293,9 @@ def done_command():
         message = '{} @:{}'.format(
             task_document['description'], task_document['project']
         )
-        print('-'*len(message))
+        # print('-'*len(message))
         print(message)
-        print('-'*len(message)+' done.')
+        # print('-'*len(message)+' done.')
         # print('You\'re done with task {}'.format(api.pickedid()))
         print(format_time_analytics(*api.done()))
         score = task_document['score']
@@ -605,7 +605,7 @@ cli.register('done', done_command, shortcuts=['finish', '-', 'ok'],
              groups=1)
 cli.register('drop', drop_command, shortcuts=['pause'],
              helpmsg='Drop the picked task if there is one')
-cli.register('drops', dropped_command, shortcuts=['fresh', 'dropped'],
+cli.register('drops', dropped_command, shortcuts=['', 'fresh', 'dropped'],
              helpmsg='Print only dropped tasks (already picked)')
 cli.register('freshstart', freshstart_command,
              helpmsg='Reset the score to zero (but keep a trace)')
@@ -623,7 +623,7 @@ cli.register('reset-hard', reset_command, shortcuts=[],
              helpmsg='You want to delete everything permanantly')
 cli.register('score', score_command,
              helpmsg='Set reward score for the picked task')
-cli.register('sumup', sumup_command, shortcuts=[''],
+cli.register('sumup', sumup_command, shortcuts=['short'],
              helpmsg='Less than next')
 cli.register('unpick', unpick_command, shortcuts=['fix-pick'],
              helpmsg='Fix picked task left as picked. \n\
