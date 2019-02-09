@@ -17,7 +17,7 @@ class DateTimeSerializer(Serializer):
 
 serialization = SerializationMiddleware()
 serialization.register_serializer(DateTimeSerializer(), 'TinyDate')
-db = TinyDB('/home/void/recess/devel/mcee/db.json', storage=serialization)  # this for test cases setup
+db = TinyDB('/Users/malikbenkirane/opt/mcee/db.json', storage=serialization)  # this for test cases setup
 
 # LOW LEVEL API
 def record_action(action):
@@ -85,6 +85,19 @@ def time_analytics(task_history):
     return \
         (totaltime_picked.total_seconds() == lastpick_time.total_seconds()), \
         totaltime_picked, lastpick_time
+
+def initdb(db):
+
+    """Initializes database (first use)"""
+    
+    status = db.table('status')
+    tasks = db.table('tasks')
+    status.insert({
+        'picked': None,
+        'nextid': 1,
+        'project': None
+    })
+    return TaskAPI(status, tasks)
 
 
 class TaskAPI():

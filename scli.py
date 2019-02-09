@@ -423,6 +423,8 @@ def print_table(api_func, noprint=[]):
         table['now'] = []
         maxlens['now'] = 0
 
+    tasks_picktime = timedelta(0)
+
     # prepare data
     for task in next_tasks:
 
@@ -505,15 +507,16 @@ def print_table(api_func, noprint=[]):
         if task['id'] != picked_taskid:
             row['now'] = ''
 
+        tasks_picktime += totalpicks.total_seconds()
         row['totalpicks'] = pretty_time_delta(totalpick.total_seconds())
 
         row['ratio'] = ''
-        if task_age > 0:
-            # TODO feature: customize ration factor
-            ratio_factor = 10
-            ratio = ratio_factor * totalpick.total_seconds() / task_age
-            if ratio > 0:
-                row['ratio'] = '{:.2f}'.format(ratio)
+        # if task_age > 0:
+        #     # TODO feature: customize ratio factor
+        #     ratio_factor = 10
+        #     ratio = ratio_factor * totalpick.total_seconds() / task_age
+        #     if ratio > 0:
+        #         row['ratio'] = '{:.2f}'.format(ratio)
 
         # update column max width
 
