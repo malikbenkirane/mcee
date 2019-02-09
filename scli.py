@@ -388,6 +388,7 @@ class Commands():
 
 
 def print_table(api_func, noprint=[]):
+
     # noprint : field list not to display
 
     # Table fields: Description, id, added x time ago, picked
@@ -424,6 +425,16 @@ def print_table(api_func, noprint=[]):
         maxlens['now'] = 0
 
     tasks_picktime = timedelta(0)
+
+    # update column max width
+    def update_maxlens(maxlens, fields, row):
+
+        for field in fields:
+            if type(row[field]) == type(''):
+                width = len(row[field])
+                if width > maxlens[field]:
+                    maxlens[field] = width
+
 
     # prepare data
     for task in next_tasks:
@@ -507,28 +518,40 @@ def print_table(api_func, noprint=[]):
         if task['id'] != picked_taskid:
             row['now'] = ''
 
-        tasks_picktime += totalpicks.total_seconds()
-        row['totalpicks'] = pretty_time_delta(totalpick.total_seconds())
+        tasks_picktime += totalpick
+        row['totalpicks'] = totalpick.total_seconds()
 
         row['ratio'] = ''
-        # if task_age > 0:
-        #     # TODO feature: customize ratio factor
-        #     ratio_factor = 10
-        #     ratio = ratio_factor * totalpick.total_seconds() / task_age
-        #     if ratio > 0:
-        #         row['ratio'] = '{:.2f}'.format(ratio)
-
-        # update column max width
-
-        for field in fields:
-            width = len(row[field])
-            if width > maxlens[field]:
-                maxlens[field] = width
 
         # filling the table with the values
 
         for field in fields:
             table[field].append(row[field])
+
+        update_maxlens(maxlens, fields, row)
+
+    # second pass through tasks to compute ratio on total pick time
+
+    tasks_picktime = tasks_picktime.total_seconds()
+
+    if 'totalpicks' not in noprint and 'ratio' not in noprint:
+
+        for i, task in enumerate(next_tasks):
+
+            task_picktime = table['totalpicks'][i]
+
+            if tasks_picktime > 0:
+                ratio = task_picktime / tasks_picktime
+                table['totalpicks'][i] = pretty_time_delta(task_picktime)
+                table['ratio'][i] = '{:.2f}'.format(ratio)
+            else:
+                table['ratio'][i] = 'inf'
+
+            row = {
+                field: table['totalpicks'][i]
+                for field in fields
+            }
+            update_maxlens(maxlens, fields, row)
 
     # setup the fields
 
@@ -550,7 +573,7 @@ def print_table(api_func, noprint=[]):
 
     fields_to_display, titles, maxlens = tuple(zip(*display_zip))
 
-    # fixs columns widths
+    # adjust columns widths with title widths
 
     maxlens = tuple(
         max(maxlen, len(title))
